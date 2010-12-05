@@ -131,7 +131,7 @@ def sinusoidaloid(var):
 	last_lp_out=0
 	
 	##freq dep cutofff
-	CUTOFF=5000+(var-440/OCTAVE)*20
+	CUTOFF=4000+(var-440/OCTAVE)*15
 	
 	alpha=1/(1+FRAME_RATE/(2*pi*CUTOFF))
 	g=0.996
@@ -193,8 +193,8 @@ if __name__=='__main__':
 	NSAMPLES = 48000*5
 	MAX=2**30-1
 	MAXSTRINGS=4
-	OCTAVE=2			#1=4th,2=3rd,0.5=5th
-	CUTOFF=3500
+	OCTAVE=4			#1=4th,2=3rd,0.5=5th
+#	CUTOFF=3500
 	global p
 	p=deque([])
 

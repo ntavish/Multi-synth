@@ -9,7 +9,7 @@
 #include <math.h>
 #include <alsa/asoundlib.h>
 
-int BUFSIZE = 440*2*1000;
+int bufsize = 50000*2;
 
 int16_t *buf=NULL;
 
@@ -17,25 +17,30 @@ snd_output_t *output = NULL;
 snd_pcm_t *handle;
 snd_pcm_sframes_t frames;
 static char *device = "default";
+#define SAMPLE_RATE 48000
 
 
 int sync_fd1, sync_fd2;//see main()
 
 void fill_buffer()
 {	
+	printf("%.8f\r\n", (2.0*(double)M_PI*(1.0/SAMPLE_RATE)));
 	double theta=0.0;
+	double freq=440.0;
+	// dt = 1/SAMPLE_RATE
+	// theta increment = freq*(2pi/SAMPLE_RATE), 1Hz takes SAMPLE_RATE cycles, freq Hz takes SAMPLE_RATE/freq cycles
 	while(1)
 	{
 		uint64_t temp;		
 		read(sync_fd1, &temp, 8);
 		
 		int loc;
-		for(loc=0; loc<BUFSIZE; loc++)
+		for(loc=0; loc<bufsize; loc++)
 		{
-			buf[loc] = sin(theta)*(INT16_MAX/4);
-			theta+=440*0.000142476;
-			if(theta>2.*M_PI) 
-				theta=0.0;
+			buf[loc] = 10000.0*sin(theta);
+			theta+=freq*(2.0*(double)M_PI*(1.0/SAMPLE_RATE));
+			// if(theta>(2.1*M_PI)) 
+			// 	theta=0.0;
 		}
 		
 		uint64_t unblock=(unsigned char)1;
@@ -72,7 +77,7 @@ void write_buffer_audio()
 				printf("again lol\n");
 			}
 			
-		frames = snd_pcm_writei(handle, buf, BUFSIZE);
+		frames = snd_pcm_writei(handle, buf, bufsize);
 		if (frames < 0)
 			frames = snd_pcm_recover(handle, frames, 0);
 		if (frames < 0) 
@@ -80,8 +85,8 @@ void write_buffer_audio()
 			printf("snd_pcm_writei failed: %s\n", snd_strerror(frames));
 			break;
 		}
-		if (frames > 0 && frames < (long)BUFSIZE)
-			printf("Short write (expected %li, wrote %li)\n", (long)BUFSIZE, frames);
+		if (frames > 0 && frames < (long)bufsize)
+			printf("Short write (expected %li, wrote %li)\n", (long)bufsize, frames);
 		printf("written\n");
 	}
 }
@@ -99,7 +104,7 @@ int main(int argc, char *argv[])
 {
 	sched_realtime();
 	
-	buf = (uint16_t *)malloc(BUFSIZE*sizeof(uint16_t));
+	buf = (uint16_t *)malloc(bufsize*sizeof(uint16_t));
 	if(!buf)
 	{
 		printf("Couldnt allocate memory for buffer\n");
@@ -133,7 +138,7 @@ int main(int argc, char *argv[])
 				SND_PCM_FORMAT_S16,
 				SND_PCM_ACCESS_RW_INTERLEAVED,
 				1,
-				48000,
+				SAMPLE_RATE,
 				1,
 				50000)) < 0)
     {

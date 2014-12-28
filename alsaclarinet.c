@@ -9,9 +9,9 @@
 #include <math.h>
 #include <alsa/asoundlib.h>
 
-#define BUFSIZE 1024
+int BUFSIZE = 440*2*1000;
 
-int16_t buf[BUFSIZE];
+int16_t *buf=NULL;
 
 snd_output_t *output = NULL;
 snd_pcm_t *handle;
@@ -23,12 +23,12 @@ int sync_fd1, sync_fd2;//see main()
 
 void fill_buffer()
 {	
+	double theta=0.0;
 	while(1)
 	{
 		uint64_t temp;		
 		read(sync_fd1, &temp, 8);
 		
-		double theta=0.0;
 		int loc;
 		for(loc=0; loc<BUFSIZE; loc++)
 		{
@@ -97,8 +97,14 @@ void sched_realtime()
 
 int main(int argc, char *argv[])
 {
-	//sched_realtime();
+	sched_realtime();
 	
+	buf = (uint16_t *)malloc(BUFSIZE*sizeof(uint16_t));
+	if(!buf)
+	{
+		printf("Couldnt allocate memory for buffer\n");
+		exit(-2);
+	}
 		
 	/*
 	 * The eventfd(2) file descriptor for fill_buffer() to wait upon.
@@ -127,9 +133,9 @@ int main(int argc, char *argv[])
 				SND_PCM_FORMAT_S16,
 				SND_PCM_ACCESS_RW_INTERLEAVED,
 				1,
-				44100,
+				48000,
 				1,
-				500000)) < 0)
+				50000)) < 0)
     {
 		/* 0.5sec latency */
 		printf("Playback open error: %s\n", snd_strerror(err));
@@ -143,7 +149,9 @@ int main(int argc, char *argv[])
 	pthread_create(&thread_write, NULL, (void*) &write_buffer_audio, (void *)NULL);
 	
 
-	while(1){}
+	while(1){
+		sleep(100000);
+	}
 
 	return 0;
 }

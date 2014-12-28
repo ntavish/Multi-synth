@@ -17,7 +17,7 @@ snd_pcm_sframes_t frames;
 static char *device = "default";
 #define SAMPLE_RATE 48000
 
-// number of frames, SR/20=1s/20= 50ms buffer
+// number of frames, SR/20=1s/20= 50ms buffer, match this with snd_pcm_set_params last param latency
 int bufsize = SAMPLE_RATE/20;
 
 int sync_fd1, sync_fd2;//see main()
@@ -25,10 +25,13 @@ int sync_fd1, sync_fd2;//see main()
 void fill_buffer()
 {	
 	printf("%.8f\r\n", (2.0*(double)M_PI*(1.0/SAMPLE_RATE)));
-	double theta=0.0;
 	double freq=440.0;
 	// dt = 1/SAMPLE_RATE
 	// theta increment = freq*(2pi/SAMPLE_RATE), 1Hz takes SAMPLE_RATE cycles, freq Hz takes SAMPLE_RATE/freq cycles
+	
+	double diff=0.0;
+	double phase=0.0;
+	double freqdev = 0.0;
 	while(1)
 	{
 		uint64_t temp;		
@@ -37,10 +40,14 @@ void fill_buffer()
 		int loc;
 		for(loc=0; loc<bufsize; loc++)
 		{
-			buf[loc] = 10000.0*sin(theta);
-			theta+=freq*(2.0*(double)M_PI*(1.0/SAMPLE_RATE));
-			// if(theta>(2.1*M_PI)) 
-			// 	theta=0.0;
+			// if( phase > 1.0 )
+			// 	phase=0.0;
+			diff = (freq+freqdev)/SAMPLE_RATE;
+			double val = sin(phase * 2 * M_PI);
+			buf[loc] = INT16_MAX/4*val;
+			phase += diff;
+
+			// freqdev+=1;
 		}
 		
 		uint64_t unblock=(unsigned char)1;

@@ -9,8 +9,6 @@
 #include <math.h>
 #include <alsa/asoundlib.h>
 
-int bufsize = 50000*2;
-
 int16_t *buf=NULL;
 
 snd_output_t *output = NULL;
@@ -19,6 +17,8 @@ snd_pcm_sframes_t frames;
 static char *device = "default";
 #define SAMPLE_RATE 48000
 
+// number of frames, SR/20=1s/20= 50ms buffer
+int bufsize = SAMPLE_RATE/20;
 
 int sync_fd1, sync_fd2;//see main()
 
